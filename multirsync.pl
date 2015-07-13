@@ -63,6 +63,7 @@ if ($remotehost) {
     $sourcepath    = "$remotehost:$sourcepath";
     foreach my $remotedata (@remotedirlist) {
         chomp $remotedata;
+        $remotedata =~ s| |\\ |g;
         push @queue, $remotedata;
     }
 } else {
