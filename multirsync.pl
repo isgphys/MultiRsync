@@ -10,8 +10,8 @@ use POSIX qw(strftime);
 
 use IPC::Open3;
 
-my $version    = "1.5";
-my $verbose_arg      = 0;
+my $version     = "1.5";
+my $verbose_arg = 0;
 my $dryrun_arg;
 
 #my $rsync_cmd = "/usr/bin/rsync";
