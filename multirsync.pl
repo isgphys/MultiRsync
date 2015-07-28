@@ -48,7 +48,7 @@ parse_command_options();
 my @queue;
 
 if ($remotehost) {
-    @remotedirlist = `rsh $remotehost ls $sourcepath`;
+    @remotedirlist = `rsh $remotehost ls "$sourcepath"`;
     $SourceHost    = $remotehost;
     $sourcepath    = "$remotehost:$sourcepath";
     foreach my $remotedata (@remotedirlist) {
