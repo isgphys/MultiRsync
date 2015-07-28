@@ -1,13 +1,4 @@
-#!/usr/bin/perl
-#
-# copyright 2012 Patrick Schmid <schmid@phys.ethz.ch>, distributed under
-# the terms of the GNU General Public License version 2 or any later
-# version.
-#
-# This is compiled with threading support
-#
-# 2012.09.07, Patrick Schmid <schmid@phys.ethz.ch>
-
+#!/usr/bin/env perl
 use strict;
 use warnings;
 
