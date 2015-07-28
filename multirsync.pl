@@ -2,9 +2,8 @@
 use strict;
 use warnings;
 
-use Getopt::Long;
-use threads qw[ yield ];
-use threads::shared;
+use Getopt::Long qw( :config no_auto_abbrev );
+use forks;
 use Thread::Queue;
 use List::MoreUtils qw/ uniq /;
 use POSIX qw(strftime);
