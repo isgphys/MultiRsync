@@ -4,6 +4,8 @@ use warnings;
 
 use Getopt::Long qw( :config no_auto_abbrev );
 use forks;
+use Cwd qw( abs_path );
+use File::Basename;
 use Thread::Queue;
 use List::MoreUtils qw/ uniq /;
 use POSIX qw(strftime);
@@ -17,7 +19,7 @@ my $dryrun_arg;
 #my $rsync_cmd = "/usr/bin/rsync";
 my $rsync_cmd = "/scratch/rsync/rsync";
 
-my $prefix  = "/opt/MultiRsync";
+my $prefix  = dirname( abs_path($0) );
 my $logpath = "$prefix/log";
 my $logdate = strftime "%Y-%m", localtime;
 my $logfile = "$logpath/$logdate.log";
