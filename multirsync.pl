@@ -16,27 +16,29 @@ my $version     = "1.5";
 my $verbose_arg = 0;
 my $dryrun_arg;
 
-#my $rsync_cmd = "/usr/bin/rsync";
-my $rsync_cmd = "/scratch/rsync/rsync";
+#my $rsync_cmd_path = "/usr/bin/rsync";
+my $rsync_cmd_path = "/scratch/rsync/rsync";
 
-my $prefix  = dirname( abs_path($0) );
-my $logpath = "$prefix/log";
-my $logdate = strftime "%Y-%m", localtime;
-my $logfile = "$logpath/$logdate.log";
+my $prefix       = dirname( abs_path($0) );
+my $logpath      = "$prefix/log";
+my $logdate      = strftime "%Y-%m", localtime;
+my $logfile      = "$logpath/$logdate.log";
+my $excludespath = "$prefix/excludes";
 
 my $SourceHost = "localhost";
 my @msgTyp     = ("INFO");
 
-my $sourcepath;
-my $destpath      = '';
-my $remotehost    = '';
-my $exclude       = '';
-my @remotedirlist = '';
-my $rsyncdel      = '';
-my $sizeonly      = '';
+my $source      = '';
+my $destination = '';
+my $sourcepath  = '';
+my $remotehost  = "";
+my @subfolders  = '';
 my $nthreads_arg;
 my $rsyncdel_arg;
 my $sizeonly_arg;
+my $relativ_arg;
+my $exclude_arg;
+my @queue;
 
 #################################
 # Main
@@ -46,28 +48,61 @@ parse_command_options();
 #################################
 # eval subfolders for the queue
 #
-&logit( 0, "BANG", "***Start RSYNC  Sequence -- Debug Mode --***" ) if $verbose_arg;
-my @queue;
-
-if ($remotehost) {
-    @remotedirlist = `rsh $remotehost ls "$sourcepath"`;
-    $SourceHost    = $remotehost;
-    $sourcepath    = "$remotehost:$sourcepath";
-    foreach my $remotedata (@remotedirlist) {
-        chomp $remotedata;
-        $remotedata =~ s| |\\ |g;
-        push @queue, $remotedata;
-    }
+if ( $source =~ m/:/ ) {
+    ($remotehost, $sourcepath) = split(/:/, $source);
 } else {
-    opendir( SOURCE, $sourcepath );
-    while ( readdir(SOURCE) ) {
-        next if ( $_ eq "." || $_ eq ".." || $_ eq ".fsr" );
-        push @queue, $_;
-    }
-    closedir(SOURCE);
+    $sourcepath = $source;
 }
 
-print "\nRSYNC sequence: @queue\n\n" if $verbose_arg;
+&logit( 0, "MultiRsync", "***Start RSYNC  Sequence -- Debug Mode --***" ) if $verbose_arg;
+print "remotehost: $remotehost SOURCE: $sourcepath DEST: $destination\n" if $verbose_arg;
+
+my $find_cmd = "find $sourcepath -xdev -mindepth 1 -maxdepth 1 -type d -printf '%P\\\\n' | sort";
+print "local_find: $find_cmd\n";
+
+if ($remotehost) {
+    $find_cmd = "rsh $remotehost $find_cmd";
+    print "remote_find: $find_cmd\n" if $verbose_arg;
+}
+    @subfolders = `$find_cmd`;
+
+    # if @subfolders empty (rsh troubles?) then use the $srcfolder
+    if ( $#subfolders == -1 ) {
+        push( @subfolders, $sourcepath );
+        logit( 0, "MultiRsync", "ERROR: eval subfolders failed, use now with:\n @subfolders" );
+        print "ERROR: eval subfolders failed, use now with:\n @subfolders\n" if $verbose_arg;
+    } else {
+        logit( 0, "MultiRsync", "eval subfolders:\n @subfolders" );
+        print "eval subfolders:\n @subfolders" if $verbose_arg;
+    }
+    my $exclsubfolderfile = "$excludespath/generic_excludes";
+
+    print "Excludefile: $exclsubfolderfile\n";
+    open(my $fhExcludeFile, '>>', $exclsubfolderfile) unless $dryrun_arg;
+
+    foreach my $subfolder (@subfolders) {
+        chomp $subfolder;
+        $subfolder =~ s| |\\ |g;
+        $subfolder =~ s|\(|\\\(|g;
+        $subfolder =~ s|\)|\\\)|g;
+
+        my $job = {
+            sourcepath     => "$sourcepath",
+            subfolder      => "$subfolder",
+            exclsubfolders => 0,
+        };
+        push( @queue, $job );
+
+        print $fhExcludeFile "- $subfolder/\n" unless $dryrun_arg;
+        print "- $subfolder/\n" if $verbose_arg;
+    }
+    close $fhExcludeFile unless $dryrun_arg;
+
+        my $job = {
+            sourcepath     => "$sourcepath",
+            exclsubfolders => 1,
+        };
+        push( @queue, $job );
 
 start_threads();
 
@@ -91,7 +126,7 @@ sub start_threads {
 
     my $Q = Thread::Queue->new;
     my @threads = map threads->create( \&thread_work, $Q ), 1 .. $nthreads;
-    $Q->enqueue($_) for sort @queue;
+    $Q->enqueue($_) for @queue;
     $Q->enqueue( (undef) x $nthreads );
     $_->join for @threads;
 
@@ -103,78 +138,89 @@ sub thread_work {
     my $tid = threads->tid;
 
     while ( my $syncfolder = $Q->dequeue ) {
+        my $tid            = threads->tid;
+        my $sourcepath     = $syncfolder->{sourcepath};
+        my $subfolder      = $syncfolder->{subfolder} || "";
+        my $exclsubfolders = $syncfolder->{exclsubfolders} || 0;
 
-        &logit( $SourceHost, $syncfolder, "Initialize rsync sequence" );
+        &logit(  $tid, $subfolder, "Initialize rsync sequence" );
 
-        if ($exclude) {
-            $exclude = "--exclude-from $exclude";
+        my $exclude = "";
+        if ($exclude_arg) {
+            $exclude = "--exclude-from=$exclude_arg";
         }
+        my $rsyncdel = "";
         if ($rsyncdel_arg) {
             $rsyncdel = "--delete";
         }
 
+        my $sizeonly = "";
         if ($sizeonly_arg) {
             $sizeonly = "--size-only";
         }
 
-        if ($dryrun_arg) {
+        my $relativ = "";
+        if ($relativ_arg) {
+            $relativ = "-R";
+        }
 
-            # imaginäre arbeit!
-            my $wait = ( int rand 10 ) + 1;
-            print "\n*****\n";
-            print "* start $syncfolder - cycles: $wait \n";
+        if ( $remotehost ) {
+            $sourcepath = $remotehost .":" . $sourcepath;
+        }
+        my $rsync_generic_exclude = '';
+        if ( $exclsubfolders ) {
+            $rsync_generic_exclude = "--exclude-from=$excludespath/generic_excludes";
+            &logit( $tid, $subfolder, "Apply subfolder excludelist: $rsync_generic_exclude" );
+        }
 
-            &logit( $SourceHost, $syncfolder, "dryrun rsync start" );
-            print "Do_WORK: $rsync_cmd -aHR $exclude -e rsh --delete '$sourcepath/$syncfolder' $destpath\n" if $verbose_arg;
+        my $wait = ( int rand 2 ) + 1;
+        logit( $tid, $subfolder, "Thread $tid sleep $wait sec. for $sourcepath/$subfolder" );
+        sleep($wait);
+        logit( $tid, $subfolder, "Thread $tid  working on $sourcepath/$subfolder" );
 
-            for my $i ( 1 .. $wait ) {
-                print "$syncfolder $i\n";
-                sleep 0.5;
+        my $rsync_options = "-aH --stats -e rsh --inplace $relativ $rsync_generic_exclude $exclude $rsyncdel $sizeonly";
+        $rsync_options =~ s/\s+$//;
+
+        &logit( $tid, $subfolder, "Rsync Command: $rsync_cmd_path $rsync_options '$sourcepath/$subfolder' $destination" );
+        &logit( $tid, $subfolder, "Executing rsync for $sourcepath/$subfolder" );
+
+        local ( *HIS_IN, *HIS_OUT, *HIS_ERR );
+        my $rsync_cmd = "echo $rsync_cmd_path" if $dryrun_arg;
+        my $rsyncpid = open3( *HIS_IN, *HIS_OUT, *HIS_ERR, "$rsync_cmd $rsync_options '$sourcepath/$subfolder' $destination" );
+
+        &logit( $tid, $subfolder, "Rsync PID: $rsyncpid for $subfolder" );
+
+        my @outlines = <HIS_OUT>;
+        my @errlines = <HIS_ERR>;
+        close HIS_IN;
+        close HIS_OUT;
+        close HIS_ERR;
+
+        print "STDOUT: $tid: @outlines\n" if $verbose_arg;
+
+        if (@errlines) {
+            print "STDERR: @errlines\n" if $verbose_arg;
+        }
+
+        waitpid( $rsyncpid, 0 );
+
+        if ($?) {
+            print "That child exited with wait status of $?\n" if $verbose_arg;
+        }
+
+        my $errcode = 0;
+        if (@errlines) {
+            foreach my $errline (@errlines) {
+                if ( $errline =~ /.* \(code (\d+)/ ) {
+                    $errcode = $1;
+                    &logit( $tid, $subfolder, "Error $errcode" );
+                }
             }
         } else {
-            my $rsync_options = "-aH --stats -e rsh --inplace $exclude $rsyncdel $sizeonly";
-
-            &logit( $SourceHost, $syncfolder, "Rsync Command: $rsync_cmd $rsync_options '$sourcepath/$syncfolder' $destpath" );
-            &logit( $SourceHost, $syncfolder, "Executing rsync for $sourcepath/$syncfolder" );
-
-            local ( *HIS_IN, *HIS_OUT, *HIS_ERR );
-            $rsync_cmd = "echo $rsync_cmd" if $dryrun_arg;
-            my $rsyncpid = open3( *HIS_IN, *HIS_OUT, *HIS_ERR, "$rsync_cmd $rsync_options '$sourcepath/$syncfolder' $destpath" );
-
-            &logit( $SourceHost, $syncfolder, "Rsync PID: $rsyncpid for $syncfolder" );
-
-            my @outlines = <HIS_OUT>;
-            my @errlines = <HIS_ERR>;
-            close HIS_IN;
-            close HIS_OUT;
-            close HIS_ERR;
-
-            print "STDOUT: @outlines\n" if $verbose_arg;
-
-            if (@errlines) {
-                print "STDERR: @errlines\n" if $verbose_arg;
-            }
-
-            waitpid( $rsyncpid, 0 );
-
-            if ($?) {
-                print "That child exited with wait status of $?\n" if $verbose_arg;
-            }
-
-            my $errcode = 0;
-            if (@errlines) {
-                foreach my $errline (@errlines) {
-                    if ( $errline =~ /.* \(code (\d+)/ ) {
-                        $errcode = $1;
-                        &logit( $SourceHost, $syncfolder, "Error $errcode" );
-                    }
-                }
-            } else {
-                &logit( $SourceHost, $syncfolder, "rsync successful!" );
-            }
+            &logit( $tid, $subfolder, "rsync successful!" );
         }
-        &logit( $SourceHost, $syncfolder, "rsync sequence done" );
     }
+    &logit( $tid , "Thread_Work", "rsync sequence done" );
 }
 
 ###########
@@ -200,22 +246,19 @@ sub parse_command_options {
         'version'      => sub { usage("Current version number: $version") },
         "v|verbose"    => \$verbose_arg,
         'n|dry-run'    => \$dryrun_arg,
-        "source=s"     => \$sourcepath,
-        "dest=s"       => \$destpath,
-        "remotehost=s" => \$remotehost,
-        "exclude=s"    => \$exclude,
-        "del"          => \$rsyncdel_arg,
+        "exclude=s"    => \$exclude_arg,
+        "relativ"      => \$relativ_arg,
+        "delete"       => \$rsyncdel_arg,
         "size-only"    => \$sizeonly_arg,
         "threads|th:i" => \$nthreads_arg
     ) or usage("Invalid commmand line options.");
 
-    usage("The Destination must be specified.")
-        unless defined $destpath;
-
-    usage("The Sourcepath must be specified.")
-        unless defined $sourcepath;
-
    $verbose_arg = 1 if ( $dryrun_arg );
+
+   usage("Missing  Arguments!") unless ( ($#ARGV + 1) == 2 );
+
+   $source      = $ARGV[-2];
+   $destination = $ARGV[-1];
 
     return 1;
 }
@@ -239,16 +282,12 @@ sub usage {
 
         Usage Example:
 
-        $command --source <sourcepath> --dest <destination>
-        $command --remotehost <remothostname> --source <sourcepath> --dest <destination>
-
-         --source <sourcepath>      Source path, ex. /export/data
-         --dest <destination>       Target path, ex. /export/backup/data
+        $command [OPTIONS] <source> <destination>
 
          Optional Arguments:
 
-         --remotehost <hostname>    Hostname of Source-Host...
-         --del                      use rsync option --delete
+         --delete                   use rsync option --delete
+         --relativ                  use rsync option --relativ
          --size-only                use rsync option --size-only, needed after globus-url-copy tasks
          --exclude <file>           Excludefile path
          --th <nr>                  Number of threads, Default: 1
