@@ -258,7 +258,9 @@ sub parse_command_options {
    usage("Missing  Arguments!") unless ( ($#ARGV + 1) == 2 );
 
    $source      = $ARGV[-2];
+   $source      =~ s/\/$//;
    $destination = $ARGV[-1];
+   $destination =~ s/\/$//;
 
     return 1;
 }
