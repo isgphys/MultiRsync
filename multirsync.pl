@@ -57,11 +57,11 @@ if ( $source =~ m/:/ ) {
 &logit( 0, "MultiRsync", "***Start RSYNC  Sequence -- Debug Mode --***" ) if $verbose_arg;
 print "remotehost: $remotehost SOURCE: $sourcepath DEST: $destination\n" if $verbose_arg;
 
-my $find_cmd = "find $sourcepath -xdev -mindepth 1 -maxdepth 1 -type d -printf '%P\\\\n' | sort";
+my $find_cmd = "find $sourcepath -xdev -mindepth 1 -maxdepth 1 -type d -printf '%P\n' | sort";
 print "local_find: $find_cmd\n";
 
 if ($remotehost) {
-    $find_cmd = "rsh $remotehost $find_cmd";
+    $find_cmd = "rsh $remotehost \"$find_cmd\"";
     print "remote_find: $find_cmd\n" if $verbose_arg;
 }
     @subfolders = `$find_cmd`;
