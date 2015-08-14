@@ -185,7 +185,7 @@ sub thread_work {
         &logit( $tid, $subfolder, "Executing rsync for $sourcepath/$subfolder" );
 
         local ( *HIS_IN, *HIS_OUT, *HIS_ERR );
-        my $rsync_cmd = "echo $rsync_cmd_path" if $dryrun_arg;
+        my $rsync_cmd = $dryrun_arg ? "echo $rsync_cmd_path" : $rsync_cmd_path;
         my $rsyncpid = open3( *HIS_IN, *HIS_OUT, *HIS_ERR, "$rsync_cmd $rsync_options '$sourcepath/$subfolder' $destination" );
 
         &logit( $tid, $subfolder, "Rsync PID: $rsyncpid for $subfolder" );
