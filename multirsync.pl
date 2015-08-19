@@ -22,7 +22,7 @@ my $prefix       = dirname( abs_path($0) );
 my $logpath      = "$prefix/log";
 my $logdate      = strftime "%Y-%m", localtime;
 my $logfile      = "$logpath/$logdate.log";
-my $excludespath = "$prefix/excludes";
+my $excludespath = "$prefix";
 
 my $SourceHost = "localhost";
 my @msgTyp     = ("INFO");
