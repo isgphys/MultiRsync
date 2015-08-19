@@ -1,4 +1,3 @@
-log/
-excludes/
+*.log
 *.swp
 .perltidyrc
