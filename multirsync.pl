@@ -32,7 +32,7 @@ my $destination = '';
 my $sourcepath  = '';
 my $remotehost  = "";
 my @subfolders  = '';
-my $rsh_arg     = "rsh";
+my $rsh_arg     = "ssh";
 my $nthreads_arg;
 my $rsyncdel_arg;
 my $sizeonly_arg;
@@ -305,6 +305,7 @@ sub usage {
          --size-only                use rsync option --size-only, needed after globus-url-copy tasks
          --exclude <file>           Excludefile path
          --th <nr>                  Number of threads, Default: 1
+         -e | --rsh=<rsh|ssh>"      specify the remote shell to use, default = ssh
          -n | --dry-run             dry-run without making changes (implies verbose)
          -v | --verbose             verbose mode
          --version                  see version
