@@ -110,6 +110,8 @@ if ($remotehost) {
 
 start_threads();
 
+print "Remove generic exclude file: $exclsubfolderfile\n" if $verbose_arg;
+unlink $exclsubfolderfile if ( -e $exclsubfolderfile );
 exit 0;
 
 #**********
