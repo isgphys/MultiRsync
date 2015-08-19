@@ -16,8 +16,7 @@ my $version     = "1.5";
 my $verbose_arg = 0;
 my $dryrun_arg;
 
-#my $rsync_cmd_path = "/usr/bin/rsync";
-my $rsync_cmd_path = "/scratch/rsync/rsync";
+my $rsync_cmd_path = "/usr/bin/rsync";
 
 my $prefix       = dirname( abs_path($0) );
 my $logpath      = "$prefix/log";
@@ -43,6 +42,11 @@ my @queue;
 #################################
 # Main
 #
+if (! -x $rsync_cmd_path) {
+    print "rsync not found in $rsync_cmd_path\n";
+    exit 1;
+}
+
 parse_command_options();
 
 #################################
