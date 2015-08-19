@@ -32,6 +32,7 @@ my $destination = '';
 my $sourcepath  = '';
 my $remotehost  = "";
 my @subfolders  = '';
+my $rsh_arg     = "rsh";
 my $nthreads_arg;
 my $rsyncdel_arg;
 my $sizeonly_arg;
@@ -65,7 +66,7 @@ my $find_cmd = "find $sourcepath -xdev -mindepth 1 -maxdepth 1 -type d -printf '
 print "local_find: $find_cmd\n";
 
 if ($remotehost) {
-    $find_cmd = "rsh $remotehost \"$find_cmd\"";
+    $find_cmd = "$rsh_arg $remotehost \"$find_cmd\"";
     print "remote_find: $find_cmd\n" if $verbose_arg;
 }
     @subfolders = `$find_cmd`;
@@ -184,7 +185,11 @@ sub thread_work {
         sleep($wait);
         logit( $tid, $subfolder, "Thread $tid  working on $sourcepath/$subfolder" );
 
-        my $rsync_options = "-aH --stats -e rsh --inplace $relativ $rsync_generic_exclude $exclude $rsyncdel $sizeonly";
+        my $rsh = "";
+        if ( $remotehost && $rsh_arg eq "rsh" ) {
+           $rsh = "-e $rsh_arg";
+        }
+        my $rsync_options = "-aH --stats $rsh --inplace $relativ $rsync_generic_exclude $exclude $rsyncdel $sizeonly";
         $rsync_options =~ s/\s+$//;
 
         &logit( $tid, $subfolder, "Rsync Command: $rsync_cmd_path $rsync_options '$sourcepath/$subfolder' $destination" );
@@ -252,6 +257,7 @@ sub parse_command_options {
         'version'      => sub { usage("Current version number: $version") },
         "v|verbose"    => \$verbose_arg,
         'n|dry-run'    => \$dryrun_arg,
+        "e|rsh:s"      => \$rsh_arg,
         "exclude=s"    => \$exclude_arg,
         "relativ"      => \$relativ_arg,
         "delete"       => \$rsyncdel_arg,
