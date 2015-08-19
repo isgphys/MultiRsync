@@ -19,7 +19,7 @@ my $dryrun_arg;
 my $rsync_cmd_path = "/usr/bin/rsync";
 
 my $prefix       = dirname( abs_path($0) );
-my $logpath      = "$prefix/log";
+my $logpath      = "$prefix";
 my $logdate      = strftime "%Y-%m", localtime;
 my $logfile      = "$logpath/$logdate.log";
 my $excludespath = "$prefix";
