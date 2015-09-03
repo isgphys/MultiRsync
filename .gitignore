@@ -1,3 +1,4 @@
 *.log
 *.swp
 .perltidyrc
+generic_*
