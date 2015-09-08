@@ -54,7 +54,8 @@ parse_command_options();
 # eval subfolders for the queue
 #
 if ( $source =~ m/:/ ) {
-    ($remotehost, $sourcepath) = split(/:/, $source);
+    ($remotehost, $sourcepath) = split(/:\//, $source);
+    $sourcepath = "/$sourcepath";
 } else {
     $sourcepath = $source;
 }
@@ -91,6 +92,7 @@ if ($remotehost) {
         $subfolder =~ s|\(|\\\(|g;
         $subfolder =~ s|\)|\\\)|g;
         $subfolder =~ s|\'|\\\'|g;
+#        $subfolder =~ s|\:|\\\:|g;
 
         my $job = {
             sourcepath     => "$sourcepath",
