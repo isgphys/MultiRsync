@@ -37,7 +37,7 @@ my $nthreads_arg;
 my $rsyncdel_arg;
 my $inplace_arg;
 my $sizeonly_arg;
-my $relativ_arg;
+my $relative_arg;
 my $exclude_arg;
 my @queue;
 
@@ -174,9 +174,9 @@ sub thread_work {
             $sizeonly = "--size-only";
         }
 
-        my $relativ = "";
-        if ($relativ_arg) {
-            $relativ = "-R";
+        my $relative = "";
+        if ($relative_arg) {
+            $relative = "-R";
         }
 
         if ( $remotehost ) {
@@ -267,7 +267,7 @@ sub parse_command_options {
         'n|dry-run'    => \$dryrun_arg,
         "e|rsh:s"      => \$rsh_arg,
         "exclude=s"    => \$exclude_arg,
-        "relativ"      => \$relativ_arg,
+        "relative"      => \$relative_arg,
         "delete"       => \$rsyncdel_arg,
         "inplace"      => \$inplace_arg,
         "size-only"    => \$sizeonly_arg,
