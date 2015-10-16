@@ -35,6 +35,7 @@ my @subfolders  = '';
 my $rsh_arg     = "ssh";
 my $nthreads_arg;
 my $rsyncdel_arg;
+my $inplace_arg;
 my $sizeonly_arg;
 my $relativ_arg;
 my $exclude_arg;
@@ -164,6 +165,10 @@ sub thread_work {
             $rsyncdel = "--delete";
         }
 
+        my $inplace = "";
+        if ($inplace_arg) {
+            $inplace = "--inplace";
+        }
         my $sizeonly = "";
         if ($sizeonly_arg) {
             $sizeonly = "--size-only";
@@ -192,7 +197,7 @@ sub thread_work {
         if ( $remotehost && $rsh_arg eq "rsh" ) {
            $rsh = "-e $rsh_arg";
         }
-        my $rsync_options = "-aH --stats $rsh --inplace $relativ $rsync_generic_exclude $exclude $rsyncdel $sizeonly";
+        my $rsync_options = "-aH $rsh $inplace $relative $rsync_generic_exclude $exclude $rsyncdel $sizeonly";
         $rsync_options =~ s/\s+$//;
 
         &logit( $tid, $subfolder, "Rsync Command: $rsync_cmd_path $rsync_options '$sourcepath/$subfolder' $destination" );
@@ -264,6 +269,7 @@ sub parse_command_options {
         "exclude=s"    => \$exclude_arg,
         "relativ"      => \$relativ_arg,
         "delete"       => \$rsyncdel_arg,
+        "inplace"      => \$inplace_arg,
         "size-only"    => \$sizeonly_arg,
         "threads|th:i" => \$nthreads_arg
     ) or usage("Invalid commmand line options.");
@@ -304,7 +310,8 @@ sub usage {
          Optional Arguments:
 
          --delete                   use rsync option --delete
-         --relativ                  use rsync option --relativ
+         --inplace                  use rsync option --inplace
+         --relative                 use rsync option --relative
          --size-only                use rsync option --size-only, needed after globus-url-copy tasks
          --exclude <file>           Excludefile path
          --th <nr>                  Number of threads, Default: 1
