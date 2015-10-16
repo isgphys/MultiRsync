@@ -1,7 +1,30 @@
 MultiRsync
 ==========
 
-MultiRsync developed and used by the [IT Services Group](http://isg.phys.ethz.ch) of the Physics Department at ETH Zurich.
+MultiRsync is a wrapper for rsync. It queues the subfolders of a given source path and lets multiple rsync processes work them off. It is developed and used by the [IT Services Group](http://isg.phys.ethz.ch) of the Physics Department at ETH Zurich.
+
+Usage
+-----
+
+```sh
+multirsync.pl [OPTIONS] <source> <destination>
+```
+
+The source and destination use the same syntax as `rsync`.
+
+Optional Arguments:
+
+    --delete                   # use rsync option --delete
+    --inplace                  # use rsync option --inplace
+    --relative                 # use rsync option --relative
+    --size-only                # use rsync option --size-only
+    --exclude <file>           # Excludefile path
+    --th <nr>                  # Number of threads, Default: 1
+    -e | --rsh=<rsh|ssh>       # specify the remote shell to use, default = ssh
+    -n | --dry-run             # dry-run without making changes (implies verbose)
+    -v | --verbose             # verbose mode
+    --version                  # see version
+    --help                     # see this help
 
 License
 -------
