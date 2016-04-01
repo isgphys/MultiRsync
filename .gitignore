@@ -2,3 +2,4 @@
 *.swp
 .perltidyrc
 generic_*
+excludelist_*
