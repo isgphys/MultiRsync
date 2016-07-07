@@ -64,7 +64,9 @@ if ( $source =~ m/:/ ) {
 &logit( 0, "MultiRsync", "***Start RSYNC  Sequence -- Debug Mode --***" ) if $verbose_arg;
 print "remotehost: $remotehost SOURCE: $sourcepath DEST: $destination\n" if $verbose_arg;
 
-my $find_cmd = "find $sourcepath -xdev -mindepth 1 -maxdepth 1 -type d -printf '%P\n' | sort";
+$sourcepath =~ s| |\ |g;
+
+my $find_cmd = "find \"$sourcepath\" -xdev -mindepth 1 -maxdepth 1 -type d -printf '%P\n' | sort";
 print "local_find: $find_cmd\n";
 
 if ($remotehost) {
@@ -200,13 +202,13 @@ sub thread_work {
         my $rsync_options = "-aH $rsh $inplace $relative $rsync_generic_exclude $exclude $rsyncdel $sizeonly";
         $rsync_options =~ s/\s+$//;
 
-        &logit( $tid, $subfolder, "Rsync Command: $rsync_cmd_path $rsync_options '$sourcepath/$subfolder' $destination" );
+        &logit( $tid, $subfolder, "Rsync Command: $rsync_cmd_path $rsync_options '$sourcepath/$subfolder' '$destination'" );
         &logit( $tid, $subfolder, "Executing rsync for $sourcepath/$subfolder" );
 
         local ( *HIS_IN, *HIS_OUT, *HIS_ERR );
         my $rsync_cmd = $dryrun_arg ? "echo $rsync_cmd_path" : $rsync_cmd_path;
         sleep 5;
-        my $rsyncpid = open3( *HIS_IN, *HIS_OUT, *HIS_ERR, "$rsync_cmd $rsync_options \"$sourcepath/$subfolder\" $destination" );
+        my $rsyncpid = open3( *HIS_IN, *HIS_OUT, *HIS_ERR, "$rsync_cmd $rsync_options $sourcepath/$subfolder \"$destination\"" );
 
         &logit( $tid, $subfolder, "Rsync PID: $rsyncpid for $subfolder" );
 
