@@ -199,7 +199,7 @@ sub thread_work {
         if ( $remotehost && $rsh_arg eq "rsh" ) {
            $rsh = "-e $rsh_arg";
         }
-        my $rsync_options = "-aH $rsh $inplace $relative $rsync_generic_exclude $exclude $rsyncdel $sizeonly";
+        my $rsync_options = "-aHx $rsh $inplace $relative $rsync_generic_exclude $exclude $rsyncdel $sizeonly";
         $rsync_options =~ s/\s+$//;
 
         &logit( $tid, $subfolder, "Rsync Command: $rsync_cmd_path $rsync_options '$sourcepath/$subfolder' '$destination'" );
