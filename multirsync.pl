@@ -39,6 +39,7 @@ my $inplace_arg;
 my $sizeonly_arg;
 my $relative_arg;
 my $exclude_arg;
+my $pattern_arg;
 my @queue;
 
 #################################
@@ -64,7 +65,12 @@ if ( $source =~ m/:/ ) {
 &logit( 0, "MultiRsync", "***Start RSYNC  Sequence -- Debug Mode --***" ) if $verbose_arg;
 print "remotehost: $remotehost SOURCE: $sourcepath DEST: $destination\n" if $verbose_arg;
 
-my $find_cmd = "find $sourcepath -xdev -mindepth 1 -maxdepth 1 -type d -printf '%P\n' | sort";
+my $pattern = "";
+if ($pattern_arg) {
+    $pattern = "-name $pattern_arg";
+}
+
+my $find_cmd = "find $sourcepath $pattern -xdev -mindepth 1 -maxdepth 1 -type d -printf '%P\n' | sort";
 print "local_find: $find_cmd\n";
 
 if ($remotehost) {
@@ -266,8 +272,9 @@ sub parse_command_options {
         "v|verbose"    => \$verbose_arg,
         'n|dry-run'    => \$dryrun_arg,
         "e|rsh:s"      => \$rsh_arg,
+        "pattern=s"    => \$pattern_arg,
         "exclude=s"    => \$exclude_arg,
-        "relative"      => \$relative_arg,
+        "relative"     => \$relative_arg,
         "delete"       => \$rsyncdel_arg,
         "inplace"      => \$inplace_arg,
         "size-only"    => \$sizeonly_arg,
@@ -309,6 +316,7 @@ sub usage {
 
          Optional Arguments:
 
+         --pattern <string>         use find option -name
          --delete                   use rsync option --delete
          --inplace                  use rsync option --inplace
          --relative                 use rsync option --relative
