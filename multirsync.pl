@@ -113,12 +113,12 @@ if ($remotehost) {
     }
     close $fhExcludeFile unless $dryrun_arg;
 
-        my $job = {
-            sourcepath     => "$sourcepath",
-            exclsubfolders => 1,
-        };
-        push( @queue, $job );
-
+#        my $job = {
+#            sourcepath     => "$sourcepath",
+#            exclsubfolders => 1,
+#        };
+#        push( @queue, $job );
+#
 start_threads();
 
 print "Remove generic exclude file: $exclsubfolderfile\n" if $verbose_arg;
@@ -267,18 +267,18 @@ sub logit {
 sub parse_command_options {
 
     GetOptions(
-        'help'         => sub { usage('') },
-        'version'      => sub { usage("Current version number: $version") },
-        "v|verbose"    => \$verbose_arg,
-        'n|dry-run'    => \$dryrun_arg,
-        "e|rsh:s"      => \$rsh_arg,
-        "pattern=s"    => \$pattern_arg,
-        "exclude=s"    => \$exclude_arg,
-        "relative"     => \$relative_arg,
-        "delete"       => \$rsyncdel_arg,
-        "inplace"      => \$inplace_arg,
-        "size-only"    => \$sizeonly_arg,
-        "threads|th:i" => \$nthreads_arg
+        'help'           => sub { usage('') },
+        'version'        => sub { usage("Current version number: $version") },
+        "v|verbose"      => \$verbose_arg,
+        'n|dry-run'      => \$dryrun_arg,
+        "e|rsh:s"        => \$rsh_arg,
+        "pattern=s"      => \$pattern_arg,
+        "exclude-from=s" => \$exclude_arg,
+        "relative"       => \$relative_arg,
+        "delete"         => \$rsyncdel_arg,
+        "inplace"        => \$inplace_arg,
+        "size-only"      => \$sizeonly_arg,
+        "threads|th:i"   => \$nthreads_arg
     ) or usage("Invalid commmand line options.");
 
    $verbose_arg = 1 if ( $dryrun_arg );
@@ -321,7 +321,7 @@ sub usage {
          --inplace                  use rsync option --inplace
          --relative                 use rsync option --relative
          --size-only                use rsync option --size-only, needed after globus-url-copy tasks
-         --exclude <file>           Excludefile path
+         --exclude-from <file>      Excludefile path
          --th <nr>                  Number of threads, Default: 1
          -e | --rsh=<rsh|ssh>"      specify the remote shell to use, default = ssh
          -n | --dry-run             dry-run without making changes (implies verbose)
