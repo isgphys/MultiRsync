@@ -113,12 +113,14 @@ if ($remotehost) {
     }
     close $fhExcludeFile unless $dryrun_arg;
 
-#        my $job = {
-#            sourcepath     => "$sourcepath",
-#            exclsubfolders => 1,
-#        };
-#        push( @queue, $job );
-#
+    unless ($pattern_arg) {
+	    my $job = {
+		    sourcepath     => "$sourcepath",
+		    exclsubfolders => 1,
+	    };
+	    push( @queue, $job );
+    }
+
 start_threads();
 
 print "Remove generic exclude file: $exclsubfolderfile\n" if $verbose_arg;
