@@ -14,11 +14,12 @@ The source and destination use the same syntax as `rsync`.
 
 Optional Arguments:
 
+    --pattern <string>         # use find option -name
     --delete                   # use rsync option --delete
     --inplace                  # use rsync option --inplace
     --relative                 # use rsync option --relative
     --size-only                # use rsync option --size-only
-    --exclude <file>           # Excludefile path
+    --exclude-from <file>      # use rsync option --exclude-from
     --th <nr>                  # Number of threads, Default: 1
     -e | --rsh=<rsh|ssh>       # specify the remote shell to use, default = ssh
     -n | --dry-run             # dry-run without making changes (implies verbose)
